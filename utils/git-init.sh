@@ -28,7 +28,7 @@ empty_dir_check() {
 
 check_args_count() {
     if (( $# > 2 )); then
-        echo "[error]Invalid number of parameters ($#); only 0, 1, or 2 are allowed."
+        echo "[error]Invalid number of parameters ($#); only 0, 1, or 2 are allowed." >&2
         usage
         exit 1
     fi
@@ -58,7 +58,7 @@ create_config() {
             break
         fi
 
-        echo "[error]user.name must not be empty."
+        echo "[error]user.name must not be empty." >&2
     done
 
     while :; do
@@ -68,14 +68,14 @@ create_config() {
             break
         fi
 
-        echo "[error]user.email must not be empty."
+        echo "[error]user.email must not be empty." >&2
     done
 
     read -r -p "Default branch [main]: " user_branch || exit 1
     user_branch="${user_branch:-main}"
 
     if ! git check-ref-format --branch "$user_branch" >/dev/null 2>&1; then
-        echo "[error]Invalid branch name: '$user_branch'."
+        echo "[error]Invalid branch name: '$user_branch'." >&2
         exit 1
     fi
 
@@ -100,12 +100,12 @@ load_config() {
     if [[ -z "${USER_NAME:-}" ||
           -z "${USER_EMAIL:-}" ||
           -z "${USER_BRANCH:-}" ]]; then
-        echo "[error]Configuration must define USER_NAME, USER_EMAIL and USER_BRANCH."
+        echo "[error]Configuration must define USER_NAME, USER_EMAIL and USER_BRANCH." >&2
         exit 1
     fi
 
     if ! git check-ref-format --branch "$USER_BRANCH" >/dev/null 2>&1; then
-        echo "[error]Invalid USER_BRANCH in '$CONFIG_FILE': '$USER_BRANCH'."
+        echo "[error]Invalid USER_BRANCH in '$CONFIG_FILE': '$USER_BRANCH'." >&2
         exit 1
     fi
 }
@@ -113,12 +113,12 @@ load_config() {
 check_args_count "$@"
 
 if ! command -v git >/dev/null; then
-    echo "[error]Git is not installed."
+    echo "[error]Git is not installed." >&2
     exit 1
 fi
 
 if git_repo_check "."; then
-    echo "[error]Run this script outside a Git repository."
+    echo "[error]Run this script outside a Git repository." >&2
     exit 1
 fi
 
