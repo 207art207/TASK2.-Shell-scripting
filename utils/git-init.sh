@@ -6,7 +6,7 @@ CONFIG_FILE="$SCRIPT_DIR/.configs/git-myconfig"
 usage() {
     echo "Usage (run from the directory containing your projects):"
     echo "  $0                     - load settings and show help"
-    echo "  $0 <dir>               - initialize a repository (not implemented yet)"
+    echo "  $0 <dir>               - initialize a repository"
     echo "  $0 <dir> <remote-url>  - also add a remote (not implemented yet)"
     echo
     printf 'Configuration file: %s\n' "$CONFIG_FILE"
@@ -126,6 +126,39 @@ load_config
 
 if (( $# == 0 )); then
     usage
+
+elif (( $# == 1 )); then
+    case "$1" in
+        ""|.|..|*/*)
+            echo "[error] Specify a directory name, not a path." >&2
+            exit 1
+            ;;
+    esac
+
+    dir="./$1"
+
+    if [[ -d "$dir" ]]; then
+        if git_repo_check "$dir"; then
+            echo "[error] Directory '$dir' already contains a Git repository." >&2
+            exit 1
+        fi
+
+        if ! empty_dir_check "$dir"; then
+            echo "[error] Directory '$dir' is not empty or cannot be read." >&2
+            exit 1
+        fi
+    else
+        mkdir -- "$dir" || exit 1
+    fi
+
+    git init -b "$USER_BRANCH" -- "$dir" || exit 1
+    git -C "$dir" config --local user.name "$USER_NAME" || exit 1
+    git -C "$dir" config --local user.email "$USER_EMAIL" || exit 1
+    git -C "$dir" config --local init.defaultBranch "$USER_BRANCH" || exit 1
+
+    printf '# %s\n' "$1" > "$dir/README.md" || exit 1
+
+    echo "Repository initialized: $dir"
 else
     echo "[error]Repository initialization and remote setup are not implemented yet."
     exit 1
