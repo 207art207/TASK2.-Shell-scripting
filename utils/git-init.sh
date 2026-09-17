@@ -7,7 +7,7 @@ usage() {
     echo "Usage (run from the directory containing your projects):"
     echo "  $0                     - load settings and show help"
     echo "  $0 <dir>               - initialize a repository"
-    echo "  $0 <dir> <remote-url>  - also add a remote (not implemented yet)"
+    echo "  $0 <dir> <remote-url>  - also add a remote"
     echo
     printf 'Configuration file: %s\n' "$CONFIG_FILE"
 }
@@ -159,7 +159,45 @@ elif (( $# == 1 )); then
     printf '# %s\n' "$1" > "$dir/README.md" || exit 1
 
     echo "Repository initialized: $dir"
-else
-    echo "[error]Repository initialization and remote setup are not implemented yet."
-    exit 1
+
+elif (( $# == 2 )); then
+    case "$1" in
+        ""|.|..|*/*)
+            echo "[error] Specify a directory name, not a path." >&2
+            exit 1
+            ;;
+    esac
+
+    if [[ -z "$2" ]]; then
+        echo "[error] Remote URL must not be empty." >&2
+        exit 1
+    fi
+
+    dir="./$1"
+
+    if [[ -d "$dir" ]]; then
+        if git_repo_check "$dir"; then
+            git -C "$dir" remote add origin "$2" || exit 1
+            echo "Remote origin added to: $dir"
+            exit 0
+        fi
+
+        if ! empty_dir_check "$dir"; then
+            echo "[error] Directory '$dir' is not empty or cannot be read." >&2
+            exit 1
+        fi
+    else
+        mkdir -- "$dir" || exit 1
+    fi
+
+    git init -b "$USER_BRANCH" -- "$dir" || exit 1
+    git -C "$dir" config --local user.name "$USER_NAME" || exit 1
+    git -C "$dir" config --local user.email "$USER_EMAIL" || exit 1
+    git -C "$dir" config --local init.defaultBranch "$USER_BRANCH" || exit 1
+
+    printf '# %s\n' "$1" > "$dir/README.md" || exit 1
+
+    git -C "$dir" remote add origin "$2" || exit 1
+
+    echo "Repository initialized with remote origin: $dir"
 fi
